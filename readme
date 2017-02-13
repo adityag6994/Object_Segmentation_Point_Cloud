@@ -1,0 +1,7 @@
+roslaunch seven_dof_arm_gazebo seven_dof_arm_world.launch	
+
+rosrun rviz rviz -f /rgbd_camera_optical_frame
+
+rosrun tabletop_operation planar input:=/rgbd_camera/depth/points
+
+rosrun tabletop_operation cluster_euclid input:=/rgbd_camera/depth/points
