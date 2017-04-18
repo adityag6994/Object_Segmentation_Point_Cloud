@@ -1,0 +1,101 @@
+
+#include <iostream>
+
+#include <ros/ros.h>
+// PCL specific includes
+#include <pcl/io/pcd_io.h>
+#include <pcl/console/time.h>
+#include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+//header for filtering
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/features/normal_3d.h>
+//header for clustering purpose
+#include <pcl/segmentation/conditional_euclidean_clustering.h>
+//header for subscribing to kinect
+#include <sensor_msgs/PointCloud2.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+//header for model coeffs-->optional
+#include <pcl/ModelCoefficients.h>
+//header for segmentation 
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+
+using namespace std;
+
+ros::Publisher pub, pub_plane;
+
+/*Genral Information
+
+	38304 data points
+	std::cout << "PointCloud before filtering has: " << cloud->points.size () << " data points." << std::endl;
+	
+	cout  << cloud->sensor_orientation_.matrix () << endl;
+	1 0 0
+	0 1 0
+	0 0 1
+
+	
+*/
+
+int _flag=0; //keep track of progeress
+
+void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& input){
+
+	_flag = _flag + 1;
+
+	//if(_flag%5 == 0){
+		cout << "RECIEVEING DATA..." << _flag << endl;	
+	//}
+
+
+/*cloud: input point cloud in PointXYZ*/
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::fromROSMsg(*input, *cloud);
+
+	// for(size_t i=100 ; i<110 ; i++){
+	// 	cout << cloud->points[i] ;// '\n';
+	// }
+	// cout << endl;
+
+/**************************************/
+  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+      pcl::VoxelGrid<pcl::PointXYZ> sor;// (new pcl::VoxelGrid<pcl::PointXYZ>);
+ 	// sor.setInputCloud (cloud);
+ 	// sor.setLeafSize (0.01f, 0.01f, 0.01f);
+ 	// sor.filter (*cloud_filtered);
+ 	// std::cout << "PointCloud after filtering has: " << cloud_filtered->points.size () << " data points." << std::endl;
+
+
+
+/*output the point cloud as clusters*/	
+	sensor_msgs::PointCloud2::Ptr clusters (new sensor_msgs::PointCloud2);	
+	pcl::toROSMsg (*cloud, *clusters);
+	clusters->header.frame_id = "/pico_flexx_optical_frame";
+	clusters->header.stamp=ros::Time::now();
+	pub.publish (*clusters);
+}
+
+
+int
+main (int argc, char** argv)
+{
+  
+  ros::init (argc, argv, "pico_flexx_sub");
+  ros::NodeHandle nh;
+	
+  // Create a ROS subscriber for the input point cloud
+  ros::Subscriber sub = nh.subscribe ("/pico_flexx/points", 1, cloud_cb);
+
+  //_flag++;
+
+  // Create a ROS publisher for the output model coefficients
+  pub = nh.advertise<sensor_msgs::PointCloud2> ("output", 1);
+
+  ros::spin ();
+}

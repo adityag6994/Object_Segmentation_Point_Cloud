@@ -1,0 +1,12 @@
+
+
+roslaunch pico_flexx_driver pico_flexx_driver.launch
+rviz rviz -f /pico_flexx_optical_frame
+rosrun pico_flexx_pcl pico_flexx_sub 
+
+fixed frame : /pico_flexx_optical_frame
+topic: /pico_flexx/points
+
+rosrun --prefix 'gdb --args' pico_flexx_pcl pico_flexx_sub
+
+rosrun rqt_reconfigure rqt_reconfigure
